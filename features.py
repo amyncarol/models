@@ -44,8 +44,16 @@ def get_element_info(row):
 		elif row[i+'_oxidation']+1 in ele.ionic_radii:
 			row[i+'_ionic_radii'] = ele.ionic_radii[row[i+'_oxidation']+1]
 		else:
-			print('Cannot found the ionic radii for oxidation state {} +(-1, 0, 1): {}: {}'.format(row[i+'_oxidation'], \
-						ele, ele.ionic_radii))
+			new_dict = {}
+			for key in ele.ionic_radii:
+				new_dict[abs(key-row[i+'_oxidation'])] = ele.ionic_radii[key]
+			index = sorted(list(new_dict.keys()))[0]
+			row[i+'_ionic_radii'] = new_dict[index]
+
+			print('Cannot found the ionic radii for oxidation state {} +(-1, 0, 1): {}: {} \n Use closest oxidation state instead: {}'\
+				.format(row[i+'_oxidation'], \
+						ele, ele.ionic_radii, new_dict[index]))
+
 
 		###electronic_structure
 		orbitals, energies, occupancies = get_atomic_structure(ele, 3) ##3-outmost subshells
@@ -159,18 +167,12 @@ def get_y(df):
 	return y
 
 if __name__ == '__main__':
-	#generate_features('energy_result', 'energy_result_expanded')
-	#onehot('energy_result_expanded', 'energy_result_expanded_onehot')
-	data = pd.read_csv('energy_result_expanded_onehot')
+	#generate_features('data/formation_energy/formation_standard', 'data/formation_energy/formation_standard_expanded')
+	#onehot('data/formation_energy/formation_standard_expanded', 'data/formation_energy/formation_standard_expanded_onehot')
+
+	data = pd.read_csv('data/formation_energy/formation_standard_expanded_onehot')
 	X = get_X_2(data)
 
 	###the inplace change of the dataframe due to previous steps, reread data!!
-	data = pd.read_csv('energy_result_expanded_onehot')
+	data = pd.read_csv('data/formation_energy/formation_standard_expanded_onehot')
 	y = get_y(data)
-
-
-
-
-
-
-

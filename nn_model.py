@@ -1,6 +1,6 @@
 import pandas as pd 
 import numpy as np 
-from features import get_element_info, generate_features, get_X_1, get_y, get_X_2
+from features import get_X_1, get_y, get_X_2
 from plots import plot_gridsearch
 
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -38,15 +38,15 @@ class NeuralNet(object):
 
 
 if __name__ == '__main__':
-	data = pd.read_csv('energy_result_expanded_onehot')
+	data = pd.read_csv('data/formation_energy/formation_standard_expanded_onehot')
 	X = get_X_2(data)
 
 	###the inplace change of the dataframe due to previous steps, reread data!!
-	data = pd.read_csv('energy_result_expanded_onehot')
+	data = pd.read_csv('data/formation_energy/formation_standard_expanded_onehot')
 	y = get_y(data).ravel()
 	
 	model = NeuralNet()
-	grid = model.validate(X, y, [300, 100, 30], [(200, ), (50, 50, 50, 50), (40, 40, 40, 40, 40, ), (20, 20, 20, 20, 20, 20, 20, 20, 20, 20, )])
+	grid = model.validate(X, y, [30, 10, 3, 1, 0.3, 0.1, 0.03], [(100, 100, ), (50, 50, 50, 50)])
 	plot_gridsearch(grid)
 
 

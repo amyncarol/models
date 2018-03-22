@@ -68,4 +68,29 @@ def plot_gridsearch(grid):
 
 	plt.show()
 
+# def pca_project(X):
+# 	"""to do"""
+# 	_, _, V = np.linalg.svd(X)   
+# 	V = V.T
+# 	proj_matrix_3d = V[:, :n_componets]
+
+# 	from mpl_toolkits.mplot3d import Axes3D
+
+# 	X_demeaned = 
+# 	X_proj3d = X_demeaned @ proj_matrix_3d
+
+# 	fig = plt.figure()
+# 	ax = fig.add_subplot(111, projection='3d')
+
+# 	xs = X_proj3d[:, 0]
+# 	ys = X_proj3d[:, 1]
+# 	zs = X_proj3d[:, 2]
+
+# 	ax.set_xlabel('PC1')
+# 	ax.set_ylabel('PC2')
+# 	ax.set_zlabel('PC3')
+
+# 	ax.scatter(xs, ys, zs)
+
+
 
