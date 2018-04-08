@@ -3,8 +3,10 @@ sys.path.insert(0, '/Users/yao/Google Drive/mmtools/')
 import re
 from math import sqrt
 import numpy as np
-from structure.solid_solution import SolidSolutionMaker, SolidSolutionFileWriter
-from utils.vasprun_structure_pickle import load_structures
+
+from mmtools.structure.solid_solution import SolidSolutionMaker, SolidSolutionFileWriter
+from mmtools.utils.vasprun_structure_pickle import load_structures
+
 from pymatgen.core.periodic_table import Element
 from pymatgen.core.structure import IStructure
 
