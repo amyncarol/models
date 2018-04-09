@@ -35,11 +35,9 @@ FLAGS = tf.app.flags.FLAGS
 # Basic model parameters.
 tf.app.flags.DEFINE_integer('batch_size', 100,
                             """Number of structures to process in a batch.""")
-tf.app.flags.DEFINE_integer('num_epochs', 1000,
-                            """Number of epochs to run.""")
 tf.app.flags.DEFINE_string('data_dir', '/Users/yao/Google Drive/models/data/formation_energy',
                            """Path to the data directory.""")
-tf.app.flags.DEFINE_boolean('use_fp16', False,
+tf.app.flags.DEFINE_boolean('use_fp16', True,
                             """Train the model using fp16.""")
 
 # Global constants describing the data set.
@@ -50,9 +48,9 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 250
 
 # Constants describing the training process.
 MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
-NUM_EPOCHS_PER_DECAY = 350.0      # Epochs after which learning rate decays.
+NUM_EPOCHS_PER_DECAY = 10.0      # Epochs after which learning rate decays.
 LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-INITIAL_LEARNING_RATE = 0.1       # Initial learning rate.
+INITIAL_LEARNING_RATE = 0.001       # Initial learning rate.
 
 
 def _activation_summary(x):
@@ -120,12 +118,11 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
     tf.add_to_collection('losses', weight_decay)
   return var
 
-def inputs(eval_data, data_dir):
+def inputs(eval_data):
   """Generate input data for training or evaluation
 
   Args:
     eval_data: bool, indicating if one should use the train or eval data set.
-    data_dir: path of the numpy files containing all data
 
   Returns: 
     energies: tensor of shape (batch_size, 1)
@@ -145,8 +142,7 @@ def inputs(eval_data, data_dir):
 
   energies, sites_matrices, adj_matrices = \
       cnn_input.inputs(eval_data = eval_data, 
-                      batch_size = FLAGS.batch_size, 
-                      num_epochs = FLAGS.num_epochs, 
+                      batch_size = FLAGS.batch_size,  
                       training_set = training_set,
                       eval_set = eval_set)
 
@@ -362,10 +358,9 @@ if __name__=='__main__':
         [3, 0]]])
   energies = tf.constant([0, 1, 2, 3], dtype=tf.float32)
 
-with tf.Session() as sess:
-  energies_hat = inference(sites_matrices, adj_matrices)
-  result = loss(energies_hat, energies)
-  sess.run(tf.global_variables_initializer())
-  print(sess.run(result))
-
+  with tf.Session() as sess:
+    energies_hat = inference(sites_matrices, adj_matrices)
+    result = loss(energies_hat, energies)
+    sess.run(tf.global_variables_initializer())
+    print(sess.run(result))
 

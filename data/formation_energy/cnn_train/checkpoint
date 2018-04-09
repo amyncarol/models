@@ -1,0 +1,6 @@
+model_checkpoint_path: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-4586"
+all_model_checkpoint_paths: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-899"
+all_model_checkpoint_paths: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-1810"
+all_model_checkpoint_paths: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-2734"
+all_model_checkpoint_paths: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-3658"
+all_model_checkpoint_paths: "/Users/yao/Google Drive/models/data/formation_energy/cnn_train/model.ckpt-4586"

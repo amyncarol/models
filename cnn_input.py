@@ -132,14 +132,13 @@ def get_training_eval(energies_file, sites_matrices_file, adj_matrices_file):
 
   return training_set, eval_set
  
-def inputs(eval_data, batch_size, num_epochs, training_set, eval_set):
+def inputs(eval_data, batch_size, training_set, eval_set):
   """
   Construct input to feed to tensorflow graph
 
   Args:
     eval_data: bool, indicating if one should use the train or eval data set.
     batch_size: number of examples per batch
-    num_epochs: number of epochs
     training_set: training data
     eval_set: evaluation data
 
@@ -154,25 +153,25 @@ def inputs(eval_data, batch_size, num_epochs, training_set, eval_set):
     dataset = eval_set
 
   with tf.name_scope('input'):
-      energies_initializer = tf.placeholder(
-          dtype=dataset['energies'].dtype,
-          shape=dataset['energies'].shape)
-      sites_matrices_initializer = tf.placeholder(
-          dtype=dataset['sites_matrices'].dtype,
-          shape=dataset['sites_matrices'].shape)
-      adj_matrices_initializer = tf.placeholder(
-          dtype=dataset['adj_matrices'].dtype,
-          shape=dataset['adj_matrices'].shape)
+      # energies_initializer = tf.constant(dataset['energies'])
+      # sites_matrices_initializer = tf.constant(dataset['sites_matrices'])
+      # adj_matrices_initializer = tf.constant(dataset['adj_matrices'])
+ 
+      # input_energies = tf.Variable(
+      #     energies_initializer, trainable=False, collections=[])
+      # input_sites_matrices = tf.Variable(
+      #     sites_matrices_initializer, trainable=False, collections=[])
+      # input_adj_matrices = tf.Variable(
+      #     adj_matrices_initializer, trainable=False, collections=[])
 
-      input_energies = tf.Variable(
-          energies_initializer, trainable=False, collections=[])
-      input_sites_matrices = tf.Variable(
-          sites_matrices_initializer, trainable=False, collections=[])
-      input_adj_matrices = tf.Variable(
-          adj_matrices_initializer, trainable=False, collections=[])
+      # Input data, pin to CPU because rest of pipeline is CPU-only
+      with tf.device('/cpu:0'):
+        input_energies = tf.constant(dataset['energies'])
+        input_sites_matrices = tf.constant(dataset['sites_matrices'])
+        input_adj_matrices = tf.constant(dataset['adj_matrices'])
 
       energy, sites_matrix, adj_matrix = tf.train.slice_input_producer(
-          [input_energies, input_sites_matrices, input_adj_matrices], num_epochs=num_epochs)
+          [input_energies, input_sites_matrices, input_adj_matrices])
 
       energies, sites_matrices, adj_matrices = tf.train.batch(
           [energy, sites_matrix, adj_matrix], batch_size=batch_size)
