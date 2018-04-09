@@ -33,7 +33,7 @@ import cnn_input
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 128,
+tf.app.flags.DEFINE_integer('batch_size', 100,
                             """Number of structures to process in a batch.""")
 tf.app.flags.DEFINE_integer('num_epochs', 1000,
                             """Number of epochs to run.""")
@@ -44,8 +44,8 @@ tf.app.flags.DEFINE_boolean('use_fp16', False,
 
 # Global constants describing the data set.
 MAX_N_SITES = cnn_input.MAX_N_SITES       #the maximum of number of sites among all structures
-#NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 100
-#NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 100
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1000
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 250
 
 
 # Constants describing the training process.
@@ -167,7 +167,7 @@ def inference(sites_matrices, adj_matrices):
     adj_matrices: tensor of shape (batch_size, max_n_sites, max_n_sites)
 
   Returns:
-    predictions
+    output: the predicted energies
   """
   
   #conv1
@@ -210,57 +210,59 @@ def inference(sites_matrices, adj_matrices):
     conv1 = tf.add(weighted_sum, sites_matrices, name=scope.name)
     _activation_summary(conv1)
 
-  return conv1
+  #pool1
+  pool1 = tf.reduce_mean(conv1,  axis = 1, name='pool1')
 
-  # pool1
-  # pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-  #                        padding='SAME', name='pool1')
+  #hidden layer
+  with tf.variable_scope('hidden1') as scope: 
+    dim = pool1.get_shape()[1].value
+    weights = _variable_with_weight_decay('weights', shape=[dim, 15],
+                                          stddev=0.04, wd=0.004)
+    biases = _variable_on_cpu('biases', [15], tf.constant_initializer(0.1))
+    hidden1 = tf.nn.relu(tf.matmul(pool1, weights) + biases, name=scope.name)
+    _activation_summary(hidden1)
+
+  #output layer
+  with tf.variable_scope('output') as scope: 
+    dim = hidden1.get_shape()[1].value
+    weights = _variable_with_weight_decay('weights', shape=[dim, 1],
+                                          stddev=0.04, wd=0.004)
+    biases = _variable_on_cpu('biases', [1], tf.constant_initializer(0.1))
+    output = tf.nn.bias_add(tf.matmul(hidden1, weights), biases, name=scope.name)
+   
+  return output
   
 
-  # # local3
-  # with tf.variable_scope('local3') as scope:
-  #   # Move everything into depth so we can perform a single matrix multiply.
-  #   reshape = tf.reshape(pool2, [images.get_shape().as_list()[0], -1])
-  #   dim = reshape.get_shape()[1].value
-  #   weights = _variable_with_weight_decay('weights', shape=[dim, 384],
-  #                                         stddev=0.04, wd=0.004)
-  #   biases = _variable_on_cpu('biases', [384], tf.constant_initializer(0.1))
-  #   local3 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
-  #   _activation_summary(local3)
-
-
-def loss(logits, labels):
+def loss(energies_hat, energies):
   """Add L2Loss to all the trainable variables.
 
-  Add summary for "Loss" and "Loss/avg".
   Args:
-    logits: Logits from inference().
-    labels: Labels from distorted_inputs or inputs(). 1-D tensor
-            of shape [batch_size]
+    energies_hat: output from inference().
+    energies: energies from inputs(). 1-D tensor of shape [batch_size]
 
   Returns:
     Loss tensor of type float.
   """
-  # Calculate the average cross entropy loss across the batch.
-  labels = tf.cast(labels, tf.int64)
-  cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-      labels=labels, logits=logits, name='cross_entropy_per_example')
-  cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
-  tf.add_to_collection('losses', cross_entropy_mean)
+  # Calculate the average loss across the batch.
+  l2_loss = tf.nn.l2_loss(energies_hat-energies, name='l2_loss')
+  n_batch = tf.cast(energies.shape[0].value, dtype=l2_loss.dtype)
+  l2_loss_mean = tf.divide(l2_loss, n_batch, name='l2_loss_mean')
+  tf.add_to_collection('losses', l2_loss_mean)
 
-  # The total loss is defined as the cross entropy loss plus all of the weight
-  # decay terms (L2 loss).
+  # The total loss is defined as the L2 loss plus all of the weight
+  # decay terms (also L2 loss).
   return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
 
 def _add_loss_summaries(total_loss):
-  """Add summaries for losses in CIFAR-10 model.
+  """Add summaries for losses.
 
   Generates moving average for all losses and associated summaries for
   visualizing the performance of the network.
 
   Args:
     total_loss: Total loss from loss().
+
   Returns:
     loss_averages_op: op for generating moving averages of losses.
   """
@@ -281,7 +283,7 @@ def _add_loss_summaries(total_loss):
 
 
 def train(total_loss, global_step):
-  """Train CIFAR-10 model.
+  """Train the model.
 
   Create an optimizer and apply to all trainable variables. Add moving
   average for all trainable variables.
@@ -358,9 +360,12 @@ if __name__=='__main__':
 
        [[0, 3],
         [3, 0]]])
+  energies = tf.constant([0, 1, 2, 3], dtype=tf.float32)
 
 with tf.Session() as sess:
-  result = inference(sites_matrices, adj_matrices)
+  energies_hat = inference(sites_matrices, adj_matrices)
+  result = loss(energies_hat, energies)
   sess.run(tf.global_variables_initializer())
   print(sess.run(result))
+
 
