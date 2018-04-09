@@ -13,6 +13,7 @@ import numpy as np
 from models.data.solid_solution.generate_2116_solid_solution_vasp_input import get_structure_dict, get_pymatgen_formula
 from models.crystal_graph import CrystalGraph
 from pymatgen.analysis.local_env import *
+from sklearn.model_selection import train_test_split
 
 # Dimension of each item
 MAX_N_SITES = 10
@@ -81,10 +82,10 @@ def generate_dataset(energy_file, structure_file, energies_file, sites_matrices_
         adj_matrix = np.zeros((MAX_N_SITES, MAX_N_SITES))
         for i in cg.graph:
           for j in range(MAX_N_SITES):
-            if j == i:
-              connectivity = 1
-            else:
+            if j != i:
               connectivity = cg.graph[i].count(j)
+            else:
+              connectivity = 0
             adj_matrix[i, j] = connectivity
         adj_matrices.append(adj_matrix)
 
@@ -101,6 +102,7 @@ def generate_dataset(energy_file, structure_file, energies_file, sites_matrices_
 def get_training_eval(energies_file, sites_matrices_file, adj_matrices_file):
   """
   given all data files, generate training and evaluation sets
+  Ensure we get the same split every time
 
   Args:
     energies_file, sites_matrices_file, adj_matrices_file: the filepath to store the .npy files which contains all data
@@ -116,16 +118,20 @@ def get_training_eval(energies_file, sites_matrices_file, adj_matrices_file):
 
     eval_set is a similar dictionary containing evaluation data
   """
-  energies = np.load(energies_file)
+  energies = np.load(energies_file).reshape(1, -1).T
   sites_matrices = np.load(sites_matrices_file)
   adj_matrices = np.load(adj_matrices_file)
 
-  training_index = np.random.choice
+  training_set = {}
+  eval_set = {}
 
-  ###TO DO
+  training_set['energies'], eval_set['energies'], \
+  training_set['sites_matrices'], eval_set['sites_matrices'],\
+   training_set['adj_matrices'], eval_set['adj_matrices'] = \
+  train_test_split(energies, sites_matrices, adj_matrices, test_size = 0.25, random_state=42, shuffle=True)
 
-  
-
+  return training_set, eval_set
+ 
 def inputs(eval_data, batch_size, num_epochs, training_set, eval_set):
   """
   Construct input to feed to tensorflow graph
@@ -182,4 +188,13 @@ if __name__=='__main__':
 
   # print(np.load('/Users/yao/Google Drive/models/data/formation_energy/energies.npy'))
   # print(np.load('/Users/yao/Google Drive/models/data/formation_energy/sites_matrices.npy'))
-  # print(np.load('/Users/yao/Google Drive/models/data/formation_energy/adj_matrices.npy'))
+  print(np.load('/Users/yao/Google Drive/models/data/formation_energy/adj_matrices.npy')[0])
+
+  # training_set, eval_set = get_training_eval('/Users/yao/Google Drive/models/data/formation_energy/energies.npy', \
+  # 	'/Users/yao/Google Drive/models/data/formation_energy/sites_matrices.npy', \
+  # 	'/Users/yao/Google Drive/models/data/formation_energy/adj_matrices.npy')
+
+  # print(eval_set['energies'].shape)
+  # print(eval_set['sites_matrices'].shape)
+  # print(eval_set['adj_matrices'].shape)
+  pass
